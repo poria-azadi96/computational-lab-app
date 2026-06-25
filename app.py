@@ -30,7 +30,6 @@ if not categories:
     st.title("Welcome to Computational Lab")
     st.info("Please create a 'tutorials' folder and add your categories and lessons.")
 else:
-    # Clean category names for visual presentation
     clean_categories = [c.split(". ", 1)[-1] if ". " in c else c for c in categories]
     category_mapping = dict(zip(clean_categories, categories))
     
@@ -47,34 +46,27 @@ else:
     else:
         selected_tutorial = st.sidebar.radio("Available Lessons:", tutorials)
         
-        # Path configuration for selected tutorial content
         tutorial_path = os.path.join(TUTORIALS_DIR, actual_category, selected_tutorial)
         text_file_path = os.path.join(tutorial_path, "text.md")
         code_file_path = os.path.join(tutorial_path, "code.py")
         
-        # Render Title
         st.title(selected_tutorial)
         
-        # Render Educational Text
         if os.path.exists(text_file_path):
             with open(text_file_path, "r", encoding="utf-8") as f:
                 st.markdown(f.read())
         else:
             st.warning("Educational content file (text.md) is missing.")
             
-        # Render and Execute Code Block
         if os.path.exists(code_file_path):
             with open(code_file_path, "r", encoding="utf-8") as f:
                 code_content = f.read()
             
-            # Displaying code syntax to student
             st.code(code_content, language="python")
             
-            # Runtime Execution Trigger
             if st.button("Run Simulation Code"):
                 st.success("Execution completed successfully!")
                 try:
-                    # Creating isolated environment with pre-loaded tools
                     exec_env = {"st": st, "np": np, "plt": plt}
                     exec(code_content, exec_env)
                 except Exception as e:
