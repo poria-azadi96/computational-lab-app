@@ -3,43 +3,46 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sqlite3
+import uuid
 from datetime import datetime
 
 # Page configuration
 st.set_page_config(page_title="Dynamic Computational Lab", layout="wide")
 
-# --- OPTION 5: CUSTOM CSS INJECTION (CYBERNETIC THEME) ---
-cyber_css = """
+# --- OPTION 5: UPDATED EYE-FRIENDLY CSS INJECTION (SOFT DARK THEME) ---
+soft_dark_css = """
 <style>
-    /* Main application background and font smoothing */
+    /* Soft dark slate blue background for eye protection */
     .stApp {
-        background-color: #0e1117;
-        color: #ffffff;
+        background-color: #0f172a;
+        color: #cbd5e1;
     }
-    /* Right align and RTL directional formatting for Persian texts */
+    /* Softer Sky Blue accents for headers, right-aligned for Persian */
     h1, h2, h3, h4 {
-        color: #00ffcc !important; /* Neon Cyan accents */
+        color: #38bdf8 !important;
         text-align: right;
         direction: rtl;
     }
+    /* Muted text colors to prevent high-contrast eye strain */
     p, li, span, label {
         text-align: right;
         direction: rtl;
         font-size: 1.05rem;
+        color: #e2e8f0;
     }
-    /* Sidebar navigation customized border and dark background */
+    /* Muted sidebar background with elegant subtle border */
     section[data-testid="stSidebar"] {
-        background-color: #07090e !important;
-        border-right: 2px solid #ff007f !important; /* Cyber Pink Boundary */
+        background-color: #1e293b !important;
+        border-right: 1px solid #334155 !important;
     }
-    /* Customizing data metric outputs display */
+    /* Smooth color transformation for key metric data displays */
     div[data-testid="stMetricValue"] {
-        color: #ff007f !important;
+        color: #38bdf8 !important;
     }
-    /* High contrast interactive button styling */
+    /* Solid ocean blue button styling without aggressive neon glow */
     .stButton>button {
-        background-color: #00ffcc !important;
-        color: #000000 !important;
+        background-color: #0284c7 !important;
+        color: #ffffff !important;
         font-weight: bold;
         border-radius: 6px;
         width: 100%;
@@ -47,17 +50,22 @@ cyber_css = """
     }
 </style>
 """
-st.markdown(cyber_css, unsafe_allow_html=True)
+st.markdown(soft_dark_css, unsafe_allow_html=True)
 
-# --- OPTION 2: LOCAL DATABASE INTEGRATION (SQLITE) ---
+# --- OPTION 2: ISOLATED DATABASE INTEGRATION (SQLITE + SESSION STATE) ---
 DB_FILE = "lab_storage.db"
 
+# Initialize a distinct browser token for tracking current user only
+if "user_token" not in st.session_state:
+    st.session_state["user_token"] = str(uuid.uuid4())
+
 def init_db():
-    """Initialize local SQLite database schema for logging user interactions."""
+    """Initialize database schema with token separation framework."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS history 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  token TEXT,
                   category TEXT, 
                   tutorial TEXT, 
                   timestamp TEXT)''')
@@ -65,27 +73,29 @@ def init_db():
     conn.close()
 
 def log_activity(category, tutorial):
-    """Log the current evaluated tutorial session to global database storage."""
+    """Log tutorial visit securely tied to the unique user token."""
+    token = st.session_state["user_token"]
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("INSERT INTO history (category, tutorial, timestamp) VALUES (?, ?, ?)", 
-              (category, tutorial, now))
+    c.execute("INSERT INTO history (token, category, tutorial, timestamp) VALUES (?, ?, ?, ?)", 
+              (token, category, tutorial, now))
     conn.commit()
     conn.close()
 
 def get_recent_history():
-    """Retrieve recent recorded sessions sequentially from sqlite database."""
+    """Retrieve history logs restricted exclusively to the active browser token."""
+    token = st.session_state["user_token"]
     if not os.path.exists(DB_FILE):
         return []
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT category, tutorial, timestamp FROM history ORDER BY id DESC LIMIT 5")
+    c.execute("SELECT category, tutorial, timestamp FROM history WHERE token = ? ORDER BY id DESC LIMIT 5", (token,))
     rows = c.fetchall()
     conn.close()
     return rows
 
-# Automatically execute database connection engine on launch
+# Launch database creation sequence
 init_db()
 
 TUTORIALS_DIR = "tutorials"
@@ -128,7 +138,7 @@ else:
     else:
         selected_tutorial = st.sidebar.radio("Available Lessons:", tutorials)
         
-        # Silently commit log event to database on evaluation navigation
+        # Committing isolated log entry safely hidden from global access
         log_activity(selected_clean_cat, selected_tutorial)
         
         tutorial_path = os.path.join(TUTORIALS_DIR, actual_category, selected_tutorial)
@@ -159,9 +169,9 @@ else:
         else:
             st.info("No interactive code script available for this lesson.")
 
-# --- SIDEBAR DATABASE LIVE TRACKING VIEW ---
+# --- SIDEBAR SESSION-ISOLATED LOGS VIEW ---
 st.sidebar.markdown("---")
-st.sidebar.subheader("آخرین فعالیت‌های ثبت‌شده در دیتابیس")
+st.sidebar.subheader("آخرین فعالیت‌های شما در این نشست")
 history_logs = get_recent_history()
 for log in history_logs:
     st.sidebar.caption(f"⏱️ {log[2]} \n {log[0]} ➔ {log[1]}")
