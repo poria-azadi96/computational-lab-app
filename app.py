@@ -2,9 +2,91 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sqlite3
+from datetime import datetime
 
 # Page configuration
-st.set_page_config(page_title="Dynamic Computational Lab", layout="centered")
+st.set_page_config(page_title="Dynamic Computational Lab", layout="wide")
+
+# --- OPTION 5: CUSTOM CSS INJECTION (CYBERNETIC THEME) ---
+cyber_css = """
+<style>
+    /* Main application background and font smoothing */
+    .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    /* Right align and RTL directional formatting for Persian texts */
+    h1, h2, h3, h4 {
+        color: #00ffcc !important; /* Neon Cyan accents */
+        text-align: right;
+        direction: rtl;
+    }
+    p, li, span, label {
+        text-align: right;
+        direction: rtl;
+        font-size: 1.05rem;
+    }
+    /* Sidebar navigation customized border and dark background */
+    section[data-testid="stSidebar"] {
+        background-color: #07090e !important;
+        border-right: 2px solid #ff007f !important; /* Cyber Pink Boundary */
+    }
+    /* Customizing data metric outputs display */
+    div[data-testid="stMetricValue"] {
+        color: #ff007f !important;
+    }
+    /* High contrast interactive button styling */
+    .stButton>button {
+        background-color: #00ffcc !important;
+        color: #000000 !important;
+        font-weight: bold;
+        border-radius: 6px;
+        width: 100%;
+        border: none;
+    }
+</style>
+"""
+st.markdown(cyber_css, unsafe_allow_html=True)
+
+# --- OPTION 2: LOCAL DATABASE INTEGRATION (SQLITE) ---
+DB_FILE = "lab_storage.db"
+
+def init_db():
+    """Initialize local SQLite database schema for logging user interactions."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS history 
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                  category TEXT, 
+                  tutorial TEXT, 
+                  timestamp TEXT)''')
+    conn.commit()
+    conn.close()
+
+def log_activity(category, tutorial):
+    """Log the current evaluated tutorial session to global database storage."""
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    c.execute("INSERT INTO history (category, tutorial, timestamp) VALUES (?, ?, ?)", 
+              (category, tutorial, now))
+    conn.commit()
+    conn.close()
+
+def get_recent_history():
+    """Retrieve recent recorded sessions sequentially from sqlite database."""
+    if not os.path.exists(DB_FILE):
+        return []
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT category, tutorial, timestamp FROM history ORDER BY id DESC LIMIT 5")
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
+# Automatically execute database connection engine on launch
+init_db()
 
 TUTORIALS_DIR = "tutorials"
 
@@ -46,6 +128,9 @@ else:
     else:
         selected_tutorial = st.sidebar.radio("Available Lessons:", tutorials)
         
+        # Silently commit log event to database on evaluation navigation
+        log_activity(selected_clean_cat, selected_tutorial)
+        
         tutorial_path = os.path.join(TUTORIALS_DIR, actual_category, selected_tutorial)
         text_file_path = os.path.join(tutorial_path, "text.md")
         code_file_path = os.path.join(tutorial_path, "code.py")
@@ -73,3 +158,10 @@ else:
                     st.error(f"Error executing code: {e}")
         else:
             st.info("No interactive code script available for this lesson.")
+
+# --- SIDEBAR DATABASE LIVE TRACKING VIEW ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("آخرین فعالیت‌های ثبت‌شده در دیتابیس")
+history_logs = get_recent_history()
+for log in history_logs:
+    st.sidebar.caption(f"⏱️ {log[2]} \n {log[0]} ➔ {log[1]}")
