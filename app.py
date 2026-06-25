@@ -9,7 +9,7 @@ from datetime import datetime
 # Page configuration
 st.set_page_config(page_title="Dynamic Computational Lab", layout="wide")
 
-# --- OPTION 5: UPDATED EYE-FRIENDLY CSS INJECTION (SOFT DARK THEME) ---
+# --- EYE-FRIENDLY CSS INJECTION (SOFT DARK THEME) ---
 soft_dark_css = """
 <style>
     /* Soft dark slate blue background for eye protection */
@@ -52,7 +52,7 @@ soft_dark_css = """
 """
 st.markdown(soft_dark_css, unsafe_allow_html=True)
 
-# --- OPTION 2: ISOLATED DATABASE INTEGRATION (SQLITE + SESSION STATE) ---
+# --- ISOLATED DATABASE INTEGRATION (SQLITE + SESSION STATE) ---
 DB_FILE = "lab_storage.db"
 
 # Initialize a distinct browser token for tracking current user only
@@ -60,10 +60,11 @@ if "user_token" not in st.session_state:
     st.session_state["user_token"] = str(uuid.uuid4())
 
 def init_db():
-    """Initialize database schema with token separation framework."""
+    """Initialize database with a fresh table name to avoid migration conflict."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS history 
+    # Using session_history instead of history to force creation of corrected schema
+    c.execute('''CREATE TABLE IF NOT EXISTS session_history 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                   token TEXT,
                   category TEXT, 
@@ -78,7 +79,7 @@ def log_activity(category, tutorial):
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    c.execute("INSERT INTO history (token, category, tutorial, timestamp) VALUES (?, ?, ?, ?)", 
+    c.execute("INSERT INTO session_history (token, category, tutorial, timestamp) VALUES (?, ?, ?, ?)", 
               (token, category, tutorial, now))
     conn.commit()
     conn.close()
@@ -90,7 +91,7 @@ def get_recent_history():
         return []
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    c.execute("SELECT category, tutorial, timestamp FROM history WHERE token = ? ORDER BY id DESC LIMIT 5", (token,))
+    c.execute("SELECT category, tutorial, timestamp FROM session_history WHERE token = ? ORDER BY id DESC LIMIT 5", (token,))
     rows = c.fetchall()
     conn.close()
     return rows
