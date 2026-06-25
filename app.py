@@ -9,7 +9,7 @@ from datetime import datetime
 # Page configuration
 st.set_page_config(page_title="Dynamic Computational Lab", layout="wide")
 
-# --- EYE-FRIENDLY CSS INJECTION (SOFT DARK THEME) ---
+# --- CUSTOM CSS INJECTION (EYE-FRIENDLY SOFT DARK THEME) ---
 soft_dark_css = """
 <style>
     /* Soft dark slate blue background for eye protection */
@@ -60,10 +60,9 @@ if "user_token" not in st.session_state:
     st.session_state["user_token"] = str(uuid.uuid4())
 
 def init_db():
-    """Initialize database with a fresh table name to avoid migration conflict."""
+    """Initialize database schema with token separation framework."""
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
-    # Using session_history instead of history to force creation of corrected schema
     c.execute('''CREATE TABLE IF NOT EXISTS session_history 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                   token TEXT,
@@ -163,7 +162,9 @@ else:
             if st.button("Run Simulation Code"):
                 st.success("Execution completed successfully!")
                 try:
-                    exec_env = {"st": st, "np": np, "plt": plt}
+                    import networkx as nx
+                    from scipy.integrate import solve_ivp
+                    exec_env = {"st": st, "np": np, "plt": plt, "nx": nx, "solve_ivp": solve_ivp}
                     exec(code_content, exec_env)
                 except Exception as e:
                     st.error(f"Error executing code: {e}")
