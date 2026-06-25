@@ -56,21 +56,21 @@ sol = solve_ivp(
 
 # 3. Visualization and Rendering Layout
 fig, ax = plt.subplots(figsize=(10, 6))
-fig.patch.set_facecolor('#0e1117')
-ax.set_facecolor('#0e1117')
+fig.patch.set_facecolor('#0f172a') # Perfectly matched with soft dark slate theme
+ax.set_facecolor('#0f172a')        # Perfectly matched with soft dark slate theme
 
 # Plotting concentration dynamics over time
 ax.plot(sol.t, sol.y[0], label='HCN (Precursor)', color='red', linestyle='--', alpha=0.7)
 ax.plot(sol.t, sol.y[1], label='H2S (Precursor)', color='orange', linestyle='--', alpha=0.7)
 ax.plot(sol.t, sol.y[2], label='Nucleotides (RNA)', color='#00ffcc', linewidth=2.5)
 ax.plot(sol.t, sol.y[3], label='Amino Acids (Proteins)', color='#ff007f', linewidth=2.5)
-ax.plot(sol.t, sol.y[4], label='Lipids (Membrane)', color='#purple', linewidth=2.5)
+ax.plot(sol.t, sol.y[4], label='Lipids (Membrane)', color='#a855f7', linewidth=2.5) # Fixed invalid hex/string color format
 
 # Graphical styling parameters
 ax.set_xlabel('Time Units', color='white')
 ax.set_ylabel('Molar Concentration', color='white')
 ax.set_title('Synchronous Production of Life Components', color='white', fontsize=14)
-ax.legend(facecolor='#0e1117', edgecolor='gray', labelcolor='white')
+ax.legend(facecolor='#0f172a', edgecolor='gray', labelcolor='white')
 ax.grid(alpha=0.2, linestyle='--')
 
 ax.spines['bottom'].set_color('white')
