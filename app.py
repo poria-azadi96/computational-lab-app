@@ -9,7 +9,7 @@ from datetime import datetime
 # Page configuration
 st.set_page_config(page_title="Dynamic Computational Lab", layout="wide")
 
-# --- CUSTOM CSS INJECTION (SOFT DARK THEME + FIXED CODE BLOCKS) ---
+# --- AGGRESSIVE CSS INJECTION (FORCE GLOBAL DARK CODE BLOCKS) ---
 soft_dark_css = """
 <style>
     /* Soft dark slate blue background for eye protection */
@@ -30,18 +30,23 @@ soft_dark_css = """
         font-size: 1.05rem;
         color: #e2e8f0;
     }
-    /* FIXING STREAMLIT CODE BLOCKS CONTRAST */
-    div[data-testid="stCodeBlock"] {
+    /* ABSOLUTE FORCE OVERRIDE FOR ALL CODE AND PRE TAGS */
+    pre, code, .stCodeBlock, [data-testid="stCodeBlock"], pre code, .stCodeBlock pre {
         background-color: #1e293b !important;
-        border: 1px solid #334155 !important;
-        border-radius: 8px !important;
-    }
-    div[data-testid="stCodeBlock"] pre {
-        background-color: transparent !important;
-    }
-    div[data-testid="stCodeBlock"] code {
         color: #f8fafc !important;
-        background-color: transparent !important;
+        background: #1e293b !important;
+    }
+    /* Target syntax highlighting tokens to ensure high contrast text */
+    .token {
+        background: transparent !important;
+        color: #f8fafc !important;
+    }
+    .token.keyword, .token.function {
+        color: #38bdf8 !important; /* Sky Blue for functions and keywords */
+        font-weight: bold !important;
+    }
+    .token.string, .token.comment {
+        color: #94a3b8 !important; /* Muted slate for strings and comments */
     }
     /* Muted sidebar background with elegant subtle border */
     section[data-testid="stSidebar"] {
